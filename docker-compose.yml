@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: ${CONTAINER_NAME_PGSQL}
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data/pgdata
+    networks:
+      - pgnetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 30s            
+      timeout: 10s             
+      retries: 5   
+
+  bot:
+    build: .  
+    container_name: ${CONTAINER_NAME_BOT}
+    restart: always 
+    environment:
+      DATABASE_HOST: postgres            
+      DATABASE_PORT: ${DB_PORT}           
+      DATABASE_USER: ${DB_USER}          
+      DATABASE_PASSWORD: ${DB_PASSWORD}       
+      DATABASE_NAME: ${DB_NAME}   
+    volumes:
+      - ./logfile.log:/app/logfile.log
+    networks:
+      - pgnetwork
+    depends_on:
+      - postgres
+
+networks:
+  pgnetwork:
+ 
+  
+volumes:
+  pgdata:  

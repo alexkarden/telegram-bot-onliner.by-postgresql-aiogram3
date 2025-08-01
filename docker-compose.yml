@@ -8,7 +8,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data/pgdata
     networks:
@@ -42,4 +42,5 @@ networks:
   
 volumes:
   pgdata:  
+
 

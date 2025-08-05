@@ -1,7 +1,11 @@
 import logging
 import os
+
 import asyncpg
-from dotenv import load_dotenv
+from dotenv import (
+    load_dotenv,
+)
+
 load_dotenv()
 
 DATABASE_CONFIG = {
@@ -11,13 +15,14 @@ DATABASE_CONFIG = {
     'password': os.getenv("DB_PASSWORD"),
     'database': os.getenv("DB_NAME"),
 }
-print
-# Создает и возвращает пул соединений к базе данных.--------------------------------------------------------------------PostgreSQL
+
+
+# Создает и возвращает пул соединений к базе данных.
 async def create_pool():
     return await asyncpg.create_pool(**DATABASE_CONFIG)
 
 
-# Инициализация базы данных---------------------------------------------------------------------------------------------PostgreSQL
+# Инициализация базы данных.
 async def init_db(pool):
 
     try:
@@ -29,30 +34,30 @@ async def init_db(pool):
                 "CREATE TABLE IF NOT EXISTS orders ("
                 "id SERIAL PRIMARY KEY, "
                 "number_of_order TEXT UNIQUE NOT NULL, "
-                "order_text TEXT, "  
+                "order_text TEXT, "
                 "send_status INT NOT NULL, "
                 "resend_status INT NOT NULL)"
             )
 
     except asyncpg.exceptions.PostgresError as e:
-        logging.error(f"Ошибка при работе с PostgreSQL - Инициализация базы данных: {e}")
+        logging.error(f"Ошибка при работе с PostgreSQL - "
+                      f"Инициализация базы данных: {e}")
     except Exception as e:
         logging.error(f"Произошла ошибка при инициализации базы данных: {e}")
 
 
-
-# Добавление заказа в базу данных --------------------------------------------------------------------------------------PostgreSQL
+# Добавление заказа в базу данных.
 async def add_order_to_db(pool, number_of_order, order_text):
     send_status = 0
     resend_status = 0
-
-
 
     try:
 
         async with pool.acquire() as conn:
             await conn.execute(
-                "INSERT INTO orders (number_of_order, order_text, send_status, resend_status) VALUES ($1, $2, $3, $4);",
+                "INSERT INTO orders (number_of_order, order_text, "
+                "send_status, resend_status) "
+                "VALUES ($1, $2, $3, $4);",
                 number_of_order, order_text, send_status, resend_status)
 
     except asyncpg.exceptions.PostgresError as e:
@@ -61,8 +66,8 @@ async def add_order_to_db(pool, number_of_order, order_text):
         logging.error(f"Произошла ошибка Добавление заказа в базу данных: {e}")
 
 
-# Получение последнего заказа из базы данных ---------------------------------------------------------------------------PostgreSQL
-async def check_order_from_db(pool,orderkey):
+# Получение последнего заказа из базы данных.
+async def check_order_from_db(pool, orderkey):
     try:
         async with pool.acquire() as conn:
             # Используем SELECT EXISTS для более эффективной проверки
@@ -72,28 +77,33 @@ async def check_order_from_db(pool,orderkey):
             )
             return check_number  # Вернет True или False в зависимости от наличия заказа
     except asyncpg.exceptions.PostgresError as e:
-        logging.error(f"Ошибка при работе с PostgreSQL - Получение последнего заказа из базы данных: {e}")
+        logging.error(f"Ошибка при работе с PostgreSQL - "
+                      f"Получение последнего заказа из базы данных: {e}")
         return False  # Возвращаем False, если произошла ошибка
     except Exception as e:
-        logging.error(f"Произошла ошибка при получении последнего заказа из базы данных: {e}")
+        logging.error(f"Произошла ошибка при получении последнего заказа из "
+                      f"базы данных: {e}")
         return False  # Возвращаем False, если произошла ошибка
 
 
-# Получение списка заказов из базы данных для рассылки -----------------------------------------------------------------PostgreSQL
+# Получение списка заказов из базы данных для рассылки.
 async def get_order_list_for_rassilka(pool, status):
 
     try:
 
         async with pool.acquire() as conn:
-            result = await conn.fetch("SELECT * FROM orders WHERE send_status = $1;", status)
+            result = await conn.fetch("SELECT * FROM orders WHERE send_status = $1;",
+                                      status)
             return result
     except asyncpg.exceptions.PostgresError as e:
-        logging.error(f"Ошибка при работе с PostgreSQL - Получение списка заказов из базы данных для рассылки: {e}")
+        logging.error(f"Ошибка при работе с PostgreSQL - "
+                      f"Получение списка заказов из базы данных для рассылки: {e}")
     except Exception as e:
-        logging.error(f"Произошла ошибка Получение списка заказов из базы данных для рассылки: {e}")
+        logging.error(f"Произошла ошибка Получение списка заказов из "
+                      f"базы данных для рассылки: {e}")
 
 
-# Смена статуса заказа для рассылки-------------------------------------------------------------------------------------PostgreSQL
+# Смена статуса заказа для рассылки/
 async def change_status_order(pool, send_status, number_of_orders):
     try:
 
@@ -104,24 +114,7 @@ async def change_status_order(pool, send_status, number_of_orders):
                 send_status, number_of_orders
             )
     except asyncpg.exceptions.PostgresError as e:
-        logging.error(f"Ошибка при работе с PostgreSQL - Смена статуса заказа для рассылки: {e}")
+        logging.error(f"Ошибка при работе с PostgreSQL - "
+                      f"Смена статуса заказа для рассылки: {e}")
     except Exception as e:
         logging.error(f"Произошла ошибка Смена статуса заказа для рассылки: {e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

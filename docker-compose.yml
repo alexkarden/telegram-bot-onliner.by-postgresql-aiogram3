@@ -1,48 +1,55 @@
 services:
-  postgres:
-    image: postgres:13
-    container_name: ${CONTAINER_NAME_PGSQL}
+  db:
+    image: mysql:5.7
+    container_name: ${CONTAINER_NAME_MYSQL}
+    restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5434:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data/pgdata
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}           
+      MYSQL_DATABASE: ${DB_NAME}     
+      MYSQL_USER: ${DB_USER}                
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     networks:
-      - pgnetwork
+      - my_network_gvs
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD", "mysqladmin", "ping", "-h127.0.0.1", "-u${DB_USER}", "-p${DB_PASSWORD}"]
       interval: 30s            
       timeout: 10s             
-      retries: 5   
+      retries: 5               
+    volumes:
+      - mysql_data:/var/lib/mysql  
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: ${CONTAINER_NAME_PHPMYADMIN}
+    restart: always
+    ports:
+      - "8080:80"  
+    environment:
+      PMA_HOST: db                         
+      PMA_USER: ${DB_USER}                 
+      PMA_PASSWORD: ${DB_PASSWORD} 
+    networks:
+      - my_network_gvs
 
   bot:
     build: .  
     container_name: ${CONTAINER_NAME_BOT}
     restart: always 
     environment:
-      DATABASE_HOST: postgres            
-      DATABASE_PORT: ${DB_PORT}           
-      DATABASE_USER: ${DB_USER}          
-      DATABASE_PASSWORD: ${DB_PASSWORD}       
-      DATABASE_NAME: ${DB_NAME}   
+      - DATABASE_HOST=db            
+      - DATABASE_PORT=${DB_PORT}           
+      - DATABASE_USER=${DB_USER}          
+      - DATABASE_PASSWORD=${DB_PASSWORD}       
+      - DATABASE_NAME=${DB_NAME}   
     volumes:
       - ./logfile.log:/app/logfile.log
     networks:
-      - pgnetwork
-    depends_on:
-      - postgres
+      - my_network_gvs
 
 networks:
-  pgnetwork:
- 
-  
+  my_network_gvs:
+    driver: bridge
+
 volumes:
-  pgdata:  
-
-
-
-
+  mysql_data:  
